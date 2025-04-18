@@ -1,0 +1,8 @@
+{
+  "admin-auth-service": true,
+  "admin-service": true,
+  "user-auth-service": true,
+  "product-service": false,
+  "store-service": false,
+  "gateway": true
+} 
