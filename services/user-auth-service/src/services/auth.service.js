@@ -382,11 +382,23 @@ class AuthService {
 
     async logout(userId) {
         try {
+            // ObjectId formatı kontrolü
+            if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+                logger.warn('Invalid userId format', { userId });
+                throw new ValidationError('Geçersiz kullanıcı ID formatı. Lütfen geçerli bir ObjectId giriniz.');
+            }
+
+            // Kullanıcıyı bul
             const user = await User.findById(userId);
             validateUser(user);
 
-            user.isLoggedIn = false;
-            await user.save();
+            if (user.isLoggedIn) {
+                user.isLoggedIn = false;
+                await user.save();
+            } else {
+                logger.warn('User not logged in', { userId });
+                throw new ValidationError(errorMessages.INVALID.USER_NOT_LOGGED_IN);
+            }
 
             logger.info('Logout successful', { userId });
 
@@ -394,6 +406,11 @@ class AuthService {
                 message: successMessages.AUTH.LOGOUT_SUCCESS
             };
         } catch (error) {
+            // CastError'ı yakala (geçersiz ObjectId)
+            if (error.name === 'CastError' && error.kind === 'ObjectId') {
+                logger.warn('Invalid ObjectId format', { userId });
+                throw new ValidationError('Geçersiz kullanıcı ID formatı. Lütfen geçerli bir ObjectId giriniz.');
+            }
             throw error;
         }
     }

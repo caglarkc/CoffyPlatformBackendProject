@@ -45,8 +45,8 @@ const options = {
         description: 'User registration, authentication, and profile management'
       },
       {
-        name: 'Admin Management',
-        description: 'Admin user management operations'
+        name: 'Admin Service',
+        description: 'Admin service operations and management'
       },
       {
         name: 'Products',
@@ -68,7 +68,8 @@ const options = {
     // Individual services
     // Note: We only include routes that are fully documented with JSDoc annotations
     path.join(__dirname, '../../services/admin-auth-service/src/routes/admin.auth.routes.js'),
-    path.join(__dirname, '../../services/user-auth-service/src/routes/auth.routes.js')
+    path.join(__dirname, '../../services/user-auth-service/src/routes/auth.routes.js'),
+    path.join(__dirname, '../../services/admin-service/src/routes/admin.routes.js')
     // Add other services as they get documented
   ],
 };

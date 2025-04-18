@@ -9,6 +9,29 @@ const services = require('../config/services');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Admin Service
+ *   description: Admin Service operations and management
+ */
+
+/**
+ * @swagger
+ * /admin:
+ *   get:
+ *     summary: Admin Service routes
+ *     description: All Admin Service operations are proxied through this endpoint
+ *     tags: [Admin Service]
+ *     responses:
+ *       200:
+ *         description: Success
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+
 // Admin Service routes
 router.use('/admin', createProxyMiddleware({
   target: services['admin-service'],

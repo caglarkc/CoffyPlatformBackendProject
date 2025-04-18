@@ -566,20 +566,7 @@ router.post('/admin/rotate-secret-key', async (req, res, next) => {
  *     responses:
  *       200:
  *         description: Service is healthy
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: OK
- *                 service:
- *                   type: string
- *                   example: User Auth Service
- *                 timestamp:
- *                   type: string
- *                   format: date-time
+ *         
  */
 router.get('/health', (req, res) => {
     res.status(200).json({ 

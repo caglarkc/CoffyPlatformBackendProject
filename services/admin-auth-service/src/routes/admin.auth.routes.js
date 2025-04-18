@@ -142,20 +142,6 @@ router.get('/test-service', asyncHandler(AdminAuthController.testService));
  *     responses:
  *       200:
  *         description: Service is healthy
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: OK
- *                 service:
- *                   type: string
- *                   example: Admin Auth Service
- *                 timestamp:
- *                   type: string
- *                   format: date-time
  */
 router.get('/health', (req, res) => {
     res.status(200).json({ 

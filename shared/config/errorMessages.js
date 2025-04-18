@@ -44,6 +44,7 @@ module.exports = {
         ALREADY_BLOCKED: 'Admin zaten bloklanmış',
         ALREADY_UNBLOCKED: 'Admin zaten bloklanmamış',
         PASSWORD_SAME: 'Şifre aynı olamaz',
+        USER_NOT_LOGGED_IN: 'Kullanıcı giriş yapmamış',
     },
     NOT_FOUND: {
         ADMIN_NOT_FOUND: 'Admin bulunamadı',
