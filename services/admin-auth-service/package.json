@@ -21,6 +21,8 @@
     "mongoose": "^7.5.0",
     "node-cron": "^3.0.2",
     "redis": "^4.6.8",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "winston": "^3.10.0"
   },
   "devDependencies": {
@@ -31,4 +33,4 @@
   "engines": {
     "node": ">=16.0.0"
   }
-} 
+}

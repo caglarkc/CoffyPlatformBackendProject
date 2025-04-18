@@ -132,6 +132,39 @@ router.get('/clear-access-token', asyncHandler(AdminAuthController.clearAccessTo
 // Test endpoint - servisin çalışıp çalışmadığını kontrol etmek için
 router.get('/test-service', asyncHandler(AdminAuthController.testService));
 
+/**
+ * @swagger
+ * /admin-auth/health:
+ *   get:
+ *     summary: Health check endpoint for Admin Auth Service
+ *     description: Provides basic health status information for the Admin Auth Service
+ *     tags: [Admin Authentication]
+ *     responses:
+ *       200:
+ *         description: Service is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: OK
+ *                 service:
+ *                   type: string
+ *                   example: Admin Auth Service
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ */
+router.get('/health', (req, res) => {
+    res.status(200).json({ 
+      message: 'OK',
+      service: 'Admin Auth Service',
+      timestamp: new Date().toISOString()
+    });
+});
+
 // Korumalı rotalar - kimlik doğrulama gerektirir
 router.post('/create-admin', authAdminMiddleware,asyncHandler(AdminAuthController.createAdmin));
 router.get('/logout', authAdminMiddleware, asyncHandler(AdminAuthController.logoutAdmin));

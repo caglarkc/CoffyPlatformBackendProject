@@ -8,62 +8,18 @@ const cors = require('cors');
 const adminRoutes = require('./routes/admin');
 const adminAuthRoutes = require('./routes/admin-auth');
 const userAuthRoutes = require('./routes/user-auth');
+const systemRoutes = require('./routes/system');
 //const productRoutes = require('./routes/product');
 //const storeRoutes = require('./routes/store');
 const { logger } = require('../shared/utils/logger');
 const services = require('./config/services');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
+const { specs, swaggerUi } = require('./config/swagger');
 
 // Load environment variables
 require('dotenv').config({ path: '../.env' });
 
 const app = express();
 const PORT = process.env.GATEWAY_PORT || 8080;
-
-// Swagger yapılandırması
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Coffy API Documentation',
-      version: '1.0.0',
-      description: 'API documentation for the Coffy microservices',
-    },
-    servers: [
-      {
-        url: `http://localhost:${PORT}/api`,
-        description: 'Development Gateway',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-        cookieAuth: {
-          type: 'apiKey',
-          in: 'cookie',
-          name: 'access_token'
-        }
-      }
-    },
-    security: [
-      {
-        bearerAuth: [],
-      }
-    ]
-  },
-  apis: [
-    './routes/*.js',
-    '../services/admin-auth-service/src/routes/*.js',
-    '../services/**/src/routes/*.js'
-  ],
-};
-
-const swaggerSpecs = swaggerJsdoc(swaggerOptions);
 
 // Middleware
 app.use(cors({
@@ -73,7 +29,7 @@ app.use(cors({
 app.use(express.json());
 
 // Swagger UI endpoint
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -86,7 +42,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
+// Health check endpoint - root level
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok',
@@ -95,26 +51,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Servis Durumu Endpoint
-app.get('/api/status', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    services: {
-      'admin-service': services['admin-service'],
-      'admin-auth-service': services['admin-auth-service'],
-      'user-auth-service': services['user-auth-service'],
-      'product-service': services['product-service'],
-      'store-service': services['store-service'],
-    },
-    version: '1.0.0',
-    timestamp: new Date().toISOString()
-  });
-});
-
 // Tüm route'ları ekle
 app.use('/api', adminRoutes);
 app.use('/api', adminAuthRoutes);
 app.use('/api', userAuthRoutes);
+app.use('/api/system', systemRoutes);
 //app.use('/api', productRoutes);
 //app.use('/api', storeRoutes);
 

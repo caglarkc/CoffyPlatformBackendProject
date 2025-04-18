@@ -13,6 +13,7 @@ const keyRotationService = require('../../../shared/services/security/keyRotatio
 const { logger, httpLogger } = require('../../../shared/utils/logger');
 const eventBus = require('../../../shared/services/event/eventBus.service');
 const adminAuthService = require('./services/admin.auth.service');
+const { specs, swaggerUi } = require('./config/swagger');
 
 const { 
   connectMongoDB, 
@@ -39,6 +40,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(requestContextMiddleware);
 app.use(responseHandlerMiddleware);
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "Admin Auth Service API Documentation"
+}));
 
 // Routes
 app.use('/admin-auth', adminAuthRoutes);

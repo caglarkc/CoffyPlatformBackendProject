@@ -9,7 +9,6 @@ const {
   connectRedis, 
   closeConnections 
 } = require('./shared/database');
-const { specs, swaggerUi } = require('./config/swagger');
 
 // Create Express application
 const app = express();
@@ -18,9 +17,6 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Initialize database connections
 async function initializeDatabases() {

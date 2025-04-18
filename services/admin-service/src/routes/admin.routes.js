@@ -4,15 +4,117 @@ const AdminController = require('../controllers/admin.controller');
 const extractAdminIdMiddleware = require('../middlewares/extractAdminIdMiddleware');
 const asyncHandler = require('../../../../shared/middlewares/errorHandler/asyncHandler');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Admin Service
+ *   description: Admin Service endpoints
+ */
+
+
+/**
+ * @swagger
+ * /admin/me:
+ *   get:
+ *     summary: Get current admin profile
+ *     tags: [Admin Service]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin profile data
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 // GET /api/admin/me - Get current admin information
 router.get('/me', extractAdminIdMiddleware, asyncHandler(AdminController.getMe));
 
+/**
+ * @swagger
+ * /admin/change-data-many:
+ *   post:
+ *     summary: Update admin data many
+ *     tags: [Admin Service]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - surname
+ *               - email
+ *               - phone
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 required: false
+ *               surname:
+ *                 type: string
+ *                 required: false
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 required: false
+ *               phone:
+ *                 type: string
+ *                 format: phone
+ *                 required: false
+ *     responses:
+ *       200:
+ *         description: Admin profile data
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 // PUT /api/admin/change-data-many - Update admin data many
 router.post('/change-data-many', extractAdminIdMiddleware, asyncHandler(AdminController.changeAdminDataMany));
 
+/**
+ * @swagger
+ * /admin/change-data-just-one:
+ *   post:
+ *     summary: Update admin data just one
+ *     tags: [Admin Service]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin profile data
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 // PUT /api/admin/change-data-just-one - Update admin data just one
 router.post('/change-data-just-one', extractAdminIdMiddleware, asyncHandler(AdminController.changeAdminDataJustOne));
 
+/**
+ * @swagger
+ * /admin/change-location:
+ *   post:
+ *     summary: Update admin location
+ *     tags: [Admin Service]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin profile data
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 // PUT /api/admin/change-location - Update admin location
 router.post('/change-location', extractAdminIdMiddleware, asyncHandler(AdminController.changeLocation));
 

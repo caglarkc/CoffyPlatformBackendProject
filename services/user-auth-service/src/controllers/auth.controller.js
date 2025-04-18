@@ -25,7 +25,8 @@ class AuthController {
                 user: { 
                     email: req.body.email,
                     phone: req.body.phone,
-                    name: req.body.name 
+                    name: req.body.name,
+                    surname: req.body.surname
                 },
                 requestId: req.requestId
             });
@@ -102,8 +103,8 @@ class AuthController {
     }
 
     async updateUser(req, res, next) {
-        console.log(req.body);
-        const message = await this.authService.updateUser(req.body);
+        console.log(req.query);
+        const message = await this.authService.updateUser(req.query);
         return res.status(200).json(message);
     }
     

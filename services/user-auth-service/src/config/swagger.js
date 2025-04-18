@@ -6,15 +6,19 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Coffy API Documentation',
+      title: 'User Auth Service API Documentation',
       version: '1.0.0',
-      description: 'API documentation for the Coffy application',
+      description: 'API documentation for the User Authentication Service',
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Development server',
+        url: 'http://localhost:3003',
+        description: 'User Auth Service (Direct)'
       },
+      {
+        url: 'http://localhost:8080/api',
+        description: 'Gateway API Endpoint'
+      }
     ],
     components: {
       securitySchemes: {
@@ -26,7 +30,7 @@ const options = {
         cookieAuth: {
           type: 'apiKey',
           in: 'cookie',
-          name: 'access_token'
+          name: 'accessToken'
         }
       }
     },
@@ -37,8 +41,7 @@ const options = {
     ]
   },
   apis: [
-    path.join(__dirname, '../index.js'),
-    path.join(__dirname, '../services/admin-auth-service/src/routes/admin.auth.routes.js')
+    path.join(__dirname, '../routes/auth.routes.js')
   ],
 };
 

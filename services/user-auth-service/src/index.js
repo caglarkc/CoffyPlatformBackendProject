@@ -11,6 +11,7 @@ const { requestContextMiddleware } = require('../../../shared/middlewares/reques
 const errorHandler = require('../../../shared/middlewares/errorHandler/errorHandler');
 const keyRotationService = require('../../../shared/services/security/keyRotation.service');
 const { logger, httpLogger } = require('../../../shared/utils/logger');
+const { specs, swaggerUi } = require('./config/swagger');
 
 const { 
   connectMongoDB, 
@@ -36,6 +37,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(requestContextMiddleware);
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "User Auth Service API Documentation"
+}));
 
 // Routes
 app.use('/auth', authRoutes);
