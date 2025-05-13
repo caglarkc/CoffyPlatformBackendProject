@@ -1,123 +1,110 @@
 /**
- * Database connection module
- * Handles connections to Redis and MongoDB
+ * Shared Database Connection Module
+ * Provides MongoDB and Redis connections for all microservices
  */
 
-const { MongoClient } = require('mongodb');
-const redis = require('redis');
-const config = require('../config/database');
+const mongoose = require('mongoose');
+const Redis = require('redis');
+const { logger } = require('./utils/logger');
 
 // MongoDB connection
-let mongoClient = null;
-let mongoDb = null;
-
-// Redis connection
-let redisClient = null;
+let mongoClient;
+let redisClient;
 
 /**
- * Initialize MongoDB connection
+ * Connect to MongoDB
  */
 async function connectMongoDB() {
   try {
-    if (!mongoClient) {
-      mongoClient = new MongoClient(config.mongodb.url, config.mongodb.options);
-      await mongoClient.connect();
-      mongoDb = mongoClient.db(config.mongodb.dbName);
-      console.log('MongoDB connection established successfully');
+    const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/coffy-platform';
+    
+    // MongoDB bağlantı seçenekleri
+    const options = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    };
+    
+    // Docker ortamında çalışırken bağlantı denemelerini artır
+    if (process.env.NODE_ENV === 'development' && process.env.MONGODB_URI?.includes('@mongodb:')) {
+      options.serverSelectionTimeoutMS = 30000; // 30 saniye
+      options.connectTimeoutMS = 30000;
     }
-    return mongoDb;
+    
+    mongoClient = await mongoose.connect(uri, options);
+    
+    logger.info('MongoDB connection established successfully');
+    return mongoClient;
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', { error: error.message, stack: error.stack });
     throw error;
   }
 }
 
 /**
- * Initialize Redis connection
+ * Connect to Redis
  */
 async function connectRedis() {
   try {
-    if (!redisClient) {
-      redisClient = redis.createClient({
-        url: `redis://${config.redis.username}:${config.redis.password}@${config.redis.host}:${config.redis.port}`,
-        database: config.redis.db
-      });
-
-      // Redis error handling
-      redisClient.on('error', (err) => {
-        console.error('Redis error:', err);
-      });
-
-      // Connect to Redis
-      await redisClient.connect();
-      console.log('Redis connection established successfully');
-    }
+    const url = process.env.REDIS_URL || 'redis://localhost:6379';
+    
+    redisClient = Redis.createClient({
+      url,
+      socket: {
+        reconnectStrategy: (retries) => {
+          // Docker ortamında çalışırken bağlantı denemelerini artır
+          if (process.env.NODE_ENV === 'development' && url.includes('redis:')) {
+            return Math.min(retries * 100, 3000); // Her denemede bekleyecek süre (max 3 saniye)
+          }
+          return Math.min(retries * 50, 1000); // Standart strateji
+        }
+      }
+    });
+    
+    redisClient.on('error', (err) => {
+      logger.error('Redis client error:', { error: err.message });
+    });
+    
+    redisClient.on('ready', () => {
+      logger.info('Redis client ready');
+    });
+    
+    redisClient.on('reconnecting', () => {
+      logger.info('Redis client reconnecting');
+    });
+    
+    await redisClient.connect();
+    
+    logger.info('Redis connection established successfully');
     return redisClient;
   } catch (error) {
-    console.error('Redis connection error:', error);
+    logger.error('Redis connection error:', { error: error.message, stack: error.stack });
     throw error;
   }
 }
 
 /**
- * Close database connections
+ * Close all database connections
  */
 async function closeConnections() {
   try {
     if (mongoClient) {
-      await mongoClient.close();
-      mongoClient = null;
-      mongoDb = null;
-      console.log('MongoDB connection closed');
+      await mongoose.disconnect();
+      logger.info('MongoDB connection closed');
     }
     
     if (redisClient) {
       await redisClient.quit();
-      redisClient = null;
-      console.log('Redis connection closed');
+      logger.info('Redis connection closed');
     }
   } catch (error) {
-    console.error('Error closing database connections:', error);
+    logger.error('Error closing database connections:', { error: error.message, stack: error.stack });
     throw error;
   }
 }
 
-async function connectTestDB() {
-  try {
-    if (!mongoClient) {
-      mongoClient = new MongoClient(config.testDB.url, config.testDB.options);
-      await mongoClient.connect();
-      mongoDb = mongoClient.db(config.testDB.dbName);
-      console.log('Test MongoDB connection established successfully');
-    }
-    return mongoDb;
-  } catch (error) {
-    console.error('Test MongoDB connection error:', error);
-    throw error;
-  }
-}
-
-async function closeTestDB() {
-  try {
-    if (mongoClient) {
-      await mongoClient.close();
-      mongoClient = null;
-      mongoDb = null;
-      console.log('Test MongoDB connection closed');
-    }
-  } catch (error) {
-    console.error('Error closing test database connections:', error);
-    throw error;
-  }
-}
-
-
-module.exports = {
+// Export database connection functions
+module.exports = { 
   connectMongoDB,
   connectRedis,
-  closeConnections,
-  getMongoDb: () => mongoDb,
-  getRedisClient: () => redisClient,
-  connectTestDB,
-  closeTestDB
+  closeConnections
 }; 

@@ -6,15 +6,17 @@
 module.exports = {
   // MongoDB connection settings
   mongodb: {
-    url: 'mongodb://localhost:27017',
+    url: process.env.MONGODB_URI || 'mongodb://host.docker.internal:27017',
     dbName: 'userAuthServiceDB',
     options: {
-      serverSelectionTimeoutMS: 5000, // 5 saniye sonra timeout
+      serverSelectionTimeoutMS: 10000, // 10 saniye sonra timeout
       socketTimeoutMS: 45000, // 45 saniye sonra socket timeout
+      useNewUrlParser: true,
+      useUnifiedTopology: true
     }
   },
   testDB: {
-    url: 'mongodb://localhost:27017',
+    url: process.env.TEST_MONGODB_URI || 'mongodb://localhost:27017',
     dbName: 'userAuthServiceDBTest',
     options: {
       serverSelectionTimeoutMS: 5000, // 5 saniye sonra timeout

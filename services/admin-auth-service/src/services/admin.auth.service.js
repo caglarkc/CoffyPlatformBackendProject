@@ -248,7 +248,7 @@ class AdminAuthService {
                 } else {
                     // Access token süresi dolmuş ama refresh token geçerli
                     // Otomatik olarak yeni access token oluştur
-                    const tokenPair = tokenService.createTokenPair(admin._id);
+                    const tokenPair = tokenService.createTokenPair(admin._id, admin.role);
                     const accessToken = tokenPair.accessToken;
 
 
@@ -268,7 +268,7 @@ class AdminAuthService {
             }
 
             // Yeni token çifti oluştur
-            const tokenPair = tokenService.createTokenPair(admin._id);
+            const tokenPair = tokenService.createTokenPair(admin._id, admin.role);
 
             
 
@@ -418,7 +418,7 @@ class AdminAuthService {
             const surname = "Koçer";
             const email = "alicaglarkocer@gmail.com";
             const phone = "5521791303";
-            const password = "Erebus13032003_";
+            const password = "Ali13032003_";
 
             const hashedEmail = helpers.hashCreaterData(email);
             const hashedPhone = helpers.hashCreaterData(phone);
@@ -1165,13 +1165,18 @@ class AdminAuthService {
                 throw new ForbiddenError(errorMessages.INVALID.INVALID_REFRESH_TOKEN);
             }
 
+            // Admin veritabanından al (role bilgisi için)
+            const admin = await Admin.findById(adminId);
+            if (!admin) {
+                throw new NotFoundError(errorMessages.NOT_FOUND.ADMIN_NOT_FOUND);
+            }
+
             // Yeni access token oluştur
-            const tokenPair = tokenService.createTokenPair(adminId);
+            const tokenPair = tokenService.createTokenPair(adminId, admin.role);
             const accessToken = tokenPair.accessToken;
 
             // Redis'e yeni access token'ı kaydet
             await redisService.put(`auth:access:${adminId}`, accessToken, 900); // 15 minutes
-
 
             return {
                 message: successMessages.AUTH.TOKEN_REFRESHED,

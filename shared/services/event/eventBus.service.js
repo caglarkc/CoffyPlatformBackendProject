@@ -15,17 +15,64 @@ class EventBus {
 
     this.connectionPromise = new Promise(async (resolve, reject) => {
       try {
-        const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://admin:Erebus13032003_@localhost:5672';
-        this.connection = await amqp.connect(rabbitmqUrl);
+        // Get RABBITMQ_URL from environment or use default
+        const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://admin:Erebus13032003_@rabbitmq:5672';
+        
+        // For Docker environments, prioritize the container service name
+        const urls = [
+          'amqp://admin:Erebus13032003_@rabbitmq:5672', // Direct container name (most reliable in Docker)
+          rabbitmqUrl, // From env 
+          'amqp://admin:Erebus13032003_@localhost:5672' // Local development fallback
+        ];
+        
+        logger.info('RabbitMQ bağlantısı kuruluyor...');
+        
+        // Try each URL in sequence
+        let connected = false;
+        let connectionError = null;
+        
+        for (const url of urls) {
+          try {
+            logger.info(`RabbitMQ bağlantısı deneniyor: ${url}`);
+            this.connection = await amqp.connect(url);
+            logger.info(`RabbitMQ bağlantısı başarılı: ${url}`);
+            connected = true;
+            break; // Exit loop on successful connection
+          } catch (error) {
+            logger.warn(`RabbitMQ bağlantı hatası (${url}): ${error.message}`);
+            connectionError = error;
+          }
+        }
+        
+        if (!connected) {
+          throw connectionError || new Error('Hiçbir RabbitMQ bağlantısı başarılı olmadı');
+        }
+        
+        // Create channel
         this.channel = await this.connection.createChannel();
         
-        // Topic exchange oluştur
+        // Create topic exchange
         await this.channel.assertExchange(this.EXCHANGE_NAME, 'topic', { durable: true });
         
-        logger.info('Successfully connected to RabbitMQ');
+        logger.info('RabbitMQ bağlantısı ve kanalı başarıyla oluşturuldu');
+        
+        // Connection error handling and auto-reconnect
+        this.connection.on('error', (err) => {
+          logger.error('RabbitMQ bağlantı hatası', { error: err.message });
+          this.connectionPromise = null;
+          setTimeout(() => this.connect(), 5000);
+        });
+        
+        this.connection.on('close', () => {
+          logger.warn('RabbitMQ bağlantısı beklenmedik şekilde kapandı');
+          this.connectionPromise = null;
+          setTimeout(() => this.connect(), 5000);
+        });
+        
         resolve(this.channel);
       } catch (error) {
-        logger.error('Failed to connect to RabbitMQ', { error });
+        logger.error('RabbitMQ bağlantısı kurulamadı', { error });
+        this.connectionPromise = null;
         reject(error);
       }
     });

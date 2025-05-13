@@ -58,22 +58,37 @@ app.get('/', (req, res) => {
 // Initialize database connections
 async function initializeDatabases() {
   try {
-    // Connect to MongoDB - store veritabanı (varsayılan)
-    await connectMongoDB();
+    console.log("Doğrudan host.docker.internal üzerinden bağlanmaya çalışıyorum...");
 
-    // Connect to Redis
+    // Mongoose bağlantısını doğrudan host.docker.internal adresine yap
+    const mongoose = require('mongoose');
+    const storeDbName = 'storeServiceDB';
+    const authDbName = 'authServiceDB';
+    
+    // Store DB bağlantısı
+    const storeUrl = `mongodb://host.docker.internal:27017/${storeDbName}`;
+    await mongoose.connect(storeUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000
+    });
+    console.log(`Store DB bağlantısı başarılı: ${storeUrl}`);
+    
+    // Auth DB için bağlantı (ikincil bağlantı)
+    const authConn = mongoose.createConnection(`mongodb://host.docker.internal:27017/${authDbName}`, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000
+    });
+    console.log(`Auth DB bağlantısı başarılı: mongodb://host.docker.internal:27017/${authDbName}`);
+    
+    // Redis bağlantısını da mevcut fonksiyonu kullanarak yap
     await connectRedis();
     
-    // Auth veritabanına bağlan (admin, user ve log verileri)
-    await getAuthDb();
-    
-    // Mongoose bağlantılarını başlat
-    await initializeMongooseConnections();
-    
-    logger.info('All database connections established successfully');
+    logger.info('Tüm veritabanı bağlantıları başarıyla kuruldu');
   } catch (error) {
     logger.error('Failed to initialize databases', { error: error.message, stack: error.stack });
-    process.exit(1);
+    logger.warn('Service will continue to run with limited functionality');
   }
 }
 

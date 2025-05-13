@@ -1,0 +1,192 @@
+# Docker Compose dosyası (version özelliği kaldırıldı)
+
+services:
+  # Veritabanı ve Bağımlılıklar
+  mongodb:
+    image: mongo:latest
+    container_name: coffy-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - coffy-network
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=Erebus13032003_
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    container_name: coffy-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - coffy-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: coffy-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - coffy-network
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=Erebus13032003_
+      # RabbitMQ güvenlik seçeneklerini yapılandır
+      - RABBITMQ_NODENAME=rabbit@rabbitmq
+      - RABBITMQ_VM_MEMORY_HIGH_WATERMARK=0.8
+      - RABBITMQ_LOGS=-
+    # Host makinesine erişim için ek ayarlar
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Mikroservisler
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: coffy-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - coffy-network
+    env_file:
+      - .env
+    environment:
+      - SERVICE_NAME=gateway
+      - GATEWAY_PORT=8080
+      - RABBITMQ_URL=amqp://admin:Erebus13032003_@rabbitmq:5672
+      - DEBUG=express:*,http-proxy-middleware:*
+    # Host makinesine erişim için ek ayarlar
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  admin-auth-service:
+    build:
+      context: .
+      dockerfile: services/admin-auth-service/Dockerfile
+    container_name: coffy-admin-auth-service
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - coffy-network
+    env_file:
+      - .env
+    environment:
+      - SERVICE_NAME=admin-auth-service
+      - RABBITMQ_URL=amqp://admin:Erebus13032003_@rabbitmq:5672
+    # Host makinesine erişim için ek ayarlar
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/admin-auth/health || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: services/admin-service/Dockerfile
+    container_name: coffy-admin-service
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+      - admin-auth-service
+    networks:
+      - coffy-network
+    env_file:
+      - .env
+    environment:
+      - SERVICE_NAME=admin-service
+      - RABBITMQ_URL=amqp://admin:Erebus13032003_@rabbitmq:5672
+    # Host makinesine erişim için ek ayarlar
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3002/health || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  user-auth-service:
+    build:
+      context: .
+      dockerfile: services/user-auth-service/Dockerfile
+    container_name: coffy-user-auth-service
+    ports:
+      - "3003:3003"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - coffy-network
+    env_file:
+      - .env
+    environment:
+      - SERVICE_NAME=user-auth-service
+      - RABBITMQ_URL=amqp://admin:Erebus13032003_@rabbitmq:5672
+    # Host makinesine erişim için ek ayarlar
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3003/health || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+# Veri saklama alanları tanımları
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+# Ağ tanımları
+networks:
+  coffy-network:
+    driver: bridge 

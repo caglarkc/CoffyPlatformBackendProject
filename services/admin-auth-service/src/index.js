@@ -66,16 +66,27 @@ app.get('/', (req, res) => {
 // Initialize database connections
 async function initializeDatabases() {
   try {
-    // Connect to MongoDB
-    await connectMongoDB();
+    console.log("Doğrudan host.docker.internal üzerinden bağlanmaya çalışıyorum...");
+
+    // Mongoose bağlantısını doğrudan host.docker.internal adresine yap
+    const mongoose = require('mongoose');
+    const dbName = 'adminAuthServiceDB';
+    const directUrl = `mongodb://host.docker.internal:27017/${dbName}`;
     
-    // Connect to Redis
+    await mongoose.connect(directUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000
+    });
+    console.log(`Mongoose doğrudan bağlantı başarılı: ${directUrl}`);
+    
+    // Redis bağlantısını da mevcut fonksiyonu kullanarak yap
     await connectRedis();
     
-    logger.info('All database connections established successfully');
+    logger.info('Veritabanı bağlantıları başarıyla kuruldu');
   } catch (error) {
     logger.error('Failed to initialize databases', { error: error.message, stack: error.stack });
-    process.exit(1);
+    logger.warn('Service will continue to run with limited functionality');
   }
 }
 

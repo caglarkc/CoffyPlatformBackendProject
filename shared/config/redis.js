@@ -6,18 +6,6 @@ const { promisify } = require('util');
  * Contains connection settings for Redis
  */
 
-// Redis connection settings
-const redisConfig = {
-  host: 'redis-16818.c8.us-east-1-4.ec2.redns.redis-cloud.com',
-  port: 16818,
-  password: 'MhiuqV5oCNbUNmxhmFrbrMVfRv5w6RtL',
-  username: 'default',
-  db: 0
-};
-
-// Redis client
-let redisClient = null;
-
 // Redis key prefixes
 const keys = {
   session: 'auth:session:',
@@ -26,17 +14,22 @@ const keys = {
   rateLimit: 'auth:ratelimit:'
 };
 
+// Redis client
+let redisClient = null;
+
 /**
  * Connect to Redis
+ * @param {string} customUrl - Optional custom Redis URL
  */
-async function connect() {
-  if (redisClient) {
+async function connect(customUrl = null) {
+  if (redisClient && redisClient.isOpen) {
     return redisClient;
   }
 
-  console.log('Redis Cloud bağlantısı başlatılıyor...');
+  // Docker veya yerel ortam için Redis URL'sini belirle
+  const redisUrl = customUrl || process.env.REDIS_URL || 'redis://localhost:6379';
   
-  const redisUrl = `redis://${redisConfig.username}:${redisConfig.password}@${redisConfig.host}:${redisConfig.port}`;
+  console.log('Redis bağlantısı başlatılıyor:', redisUrl);
   
   // Create Redis client
   redisClient = Redis.createClient({
@@ -54,19 +47,19 @@ async function connect() {
   
   // Event listeners
   redisClient.on('connect', () => {
-    console.log('Redis Cloud bağlantısı başarılı');
+    console.log('Redis bağlantısı başarılı');
   });
   
   redisClient.on('error', (err) => {
-    console.error('Redis Cloud bağlantı hatası:', err);
+    console.error('Redis bağlantı hatası:', err);
   });
   
   redisClient.on('ready', () => {
-    console.log('Redis Cloud kullanıma hazır');
+    console.log('Redis kullanıma hazır');
   });
   
   redisClient.on('end', () => {
-    console.log('Redis Cloud bağlantısı kapandı');
+    console.log('Redis bağlantısı kapandı');
   });
   
   // Start connection
@@ -82,7 +75,7 @@ async function disconnect() {
   if (redisClient) {
     await redisClient.quit();
     redisClient = null;
-    console.log('[Auth Service] Redis connection closed');
+    console.log('Redis connection closed');
   }
 }
 

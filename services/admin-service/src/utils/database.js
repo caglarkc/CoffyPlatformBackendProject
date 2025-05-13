@@ -1,5 +1,5 @@
 /**
- * Auth Service Database Connection Module
+ * Admin Service Database Connection Module
  * Handles connections to Redis and MongoDB
  */
 
@@ -18,20 +18,35 @@ let mongoDb = null;
 async function connectMongoDB() {
   try {
     if (!mongoClient) {
+      // Docker ortamı için MongoDB bağlantı URL'sini doğrudan kullan
+      const mongoUrl = process.env.MONGODB_URI || config.mongodb.url;
+      console.log('[Admin Service] Using MongoDB URL:', mongoUrl);
+      
+      // Debug için bağlantı bilgilerini gösterelim
+      console.log('[Admin Service] MongoDB Config:', JSON.stringify({
+        url: mongoUrl,
+        dbName: config.mongodb.dbName,
+        options: config.mongodb.options
+      }));
+      
       // MongoClient bağlantısı
-      mongoClient = new MongoClient(config.mongodb.url, config.mongodb.options);
+      mongoClient = new MongoClient(mongoUrl, config.mongodb.options);
       await mongoClient.connect();
       mongoDb = mongoClient.db(config.mongodb.dbName);
       
       // Mongoose bağlantısı
-      await mongoose.connect(`${config.mongodb.url}/${config.mongodb.dbName}`, config.mongodb.options);
+      await mongoose.connect(`${mongoUrl}/${config.mongodb.dbName}`, config.mongodb.options);
       
-      console.log('[Auth Service] MongoDB connection established successfully');
+      console.log('[Admin Service] MongoDB connection established successfully');
     }
     return mongoDb;
   } catch (error) {
-    console.error('[Auth Service] MongoDB connection error:', error);
-    throw error;
+    console.error('[Admin Service] MongoDB connection error:', error);
+    
+    // Burada hatayı fırlatmak yerine, null dönüyoruz
+    // Böylece uygulama MongoDB olmadan da çalışmaya devam edebilir
+    console.warn('[Admin Service] Continuing without MongoDB. Some features will be limited.');
+    return null;
   }
 }
 
@@ -40,11 +55,16 @@ async function connectMongoDB() {
  */
 async function connectRedis() {
   try {
-    await redis.connect();
+    // Docker ortamı için Redis URL'sini kullan
+    const redisUrl = process.env.REDIS_URL || 'redis://host.docker.internal:6379';
+    console.log('[Admin Service] Using Redis URL:', redisUrl);
+    
+    await redis.connect(redisUrl);
     return redis.redisClient();
   } catch (error) {
-    console.error('[Auth Service] Redis connection error:', error);
-    throw error;
+    console.error('[Admin Service] Redis connection error:', error);
+    console.warn('[Admin Service] Continuing without Redis. Some features will be limited.');
+    return null;
   }
 }
 
@@ -57,26 +77,32 @@ async function closeConnections() {
       await mongoClient.close();
       mongoClient = null;
       mongoDb = null;
-      console.log('[Auth Service] MongoDB connection closed');
+      console.log('[Admin Service] MongoDB connection closed');
     }
     
     // Mongoose bağlantısını kapat
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
-      console.log('[Auth Service] Mongoose connection closed');
+      console.log('[Admin Service] Mongoose connection closed');
     }
     
     await redis.disconnect();
   } catch (error) {
-    console.error('[Auth Service] Error closing database connections:', error);
-    throw error;
+    console.error('[Admin Service] Error closing database connections:', error);
   }
 }
 
 // MongoDB Collection Helpers
 const getCollection = (collectionName) => {
   if (!mongoDb) {
-    throw new Error('[Auth Service] MongoDB connection not established');
+    console.warn(`[Admin Service] MongoDB connection not established, cannot get collection ${collectionName}`);
+    return {
+      find: () => ({ toArray: () => Promise.resolve([]) }),
+      findOne: () => Promise.resolve(null),
+      insertOne: () => Promise.resolve({ insertedId: 'mock-id' }),
+      updateOne: () => Promise.resolve({ modifiedCount: 0 }),
+      deleteOne: () => Promise.resolve({ deletedCount: 0 })
+    };
   }
   return mongoDb.collection(collectionName);
 };

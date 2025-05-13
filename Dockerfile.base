@@ -1,0 +1,23 @@
+FROM node:18-alpine
+
+# Çalışma dizinini oluştur
+WORKDIR /app
+
+# Sadece package.json dosyalarını önce kopyala
+COPY package*.json ./
+
+# Shared klasörünün package.json dosyalarını kopyala
+COPY shared/package*.json ./shared/
+
+# Bağımlılıkları yükle
+RUN npm install
+RUN cd shared && npm install
+
+# Projenin geri kalanını kopyala
+COPY . .
+
+# Node ortam değişkenini production olarak ayarla
+ENV NODE_ENV=production
+
+# Varsayılan komut
+CMD ["npm", "start"] 
