@@ -8,6 +8,8 @@ const cookieParser = require('cookie-parser');
 const {requestContextMiddleware} = require('../../../shared/middlewares/requestContext');
 const errorHandler = require('../../../shared/middlewares/errorHandler/errorHandler');
 const {logger , httpLogger} = require('../../../shared/utils/logger');
+const eventBus = require('../../../shared/services/event/eventBus.service');
+const storeService = require('./services/store.service');
 const keyRotationService = require('../../../shared/services/security/keyRotation.service');
 const { initializeMongooseConnections } = require('./utils/mongooseConnections');
 
@@ -41,7 +43,7 @@ app.use(cookieParser());
 app.use(requestContextMiddleware);
 
 // Register routes
-app.use('/api/store', storeRoutes);
+app.use('/api/v1/store', storeRoutes);
 
 // Error middleware - tüm route'lardan sonra eklenmelidir
 app.use(errorHandler);
@@ -55,40 +57,39 @@ app.get('/', (req, res) => {
   });
 });
 
+// Initialize event bus and listeners
+async function initializeEventBus() {
+  try {
+    await eventBus.connect();
+    logger.info('EventBus connection established successfully');
+    
+    // Initialize event listeners for admin service
+    await storeService.initializeEventListeners();
+    logger.info('Store service event listeners initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize EventBus', { error: error.message, stack: error.stack });
+  }
+}
+
 // Initialize database connections
 async function initializeDatabases() {
   try {
-    console.log("Doğrudan host.docker.internal üzerinden bağlanmaya çalışıyorum...");
+    // Connect to MongoDB - store veritabanı (varsayılan)
+    await connectMongoDB();
 
-    // Mongoose bağlantısını doğrudan host.docker.internal adresine yap
-    const mongoose = require('mongoose');
-    const storeDbName = 'storeServiceDB';
-    const authDbName = 'authServiceDB';
-    
-    // Store DB bağlantısı
-    const storeUrl = `mongodb://host.docker.internal:27017/${storeDbName}`;
-    await mongoose.connect(storeUrl, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000
-    });
-    console.log(`Store DB bağlantısı başarılı: ${storeUrl}`);
-    
-    // Auth DB için bağlantı (ikincil bağlantı)
-    const authConn = mongoose.createConnection(`mongodb://host.docker.internal:27017/${authDbName}`, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000
-    });
-    console.log(`Auth DB bağlantısı başarılı: mongodb://host.docker.internal:27017/${authDbName}`);
-    
-    // Redis bağlantısını da mevcut fonksiyonu kullanarak yap
+    // Connect to Redis
     await connectRedis();
     
-    logger.info('Tüm veritabanı bağlantıları başarıyla kuruldu');
+    // Auth veritabanına bağlan (admin, user ve log verileri)
+    await getAuthDb();
+    
+    // Mongoose bağlantılarını başlat
+    await initializeMongooseConnections();
+    
+    logger.info('All database connections established successfully');
   } catch (error) {
     logger.error('Failed to initialize databases', { error: error.message, stack: error.stack });
-    logger.warn('Service will continue to run with limited functionality');
+    process.exit(1);
   }
 }
 
@@ -124,6 +125,8 @@ async function startServer() {
     // Initialize key rotation service
     const keyRotationJob = initializeKeyRotation();
     
+    await initializeEventBus();
+
     // Start listening
     app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
@@ -136,6 +139,7 @@ async function startServer() {
         keyRotationJob.stop();
         logger.info('Key rotation service stopped');
       }
+      await eventBus.close();
       await closeConnections();
       process.exit(0);
     });
@@ -146,6 +150,7 @@ async function startServer() {
         keyRotationJob.stop();
         logger.info('Key rotation service stopped');
       }
+      await eventBus.close();
       await closeConnections();
       process.exit(0);
     });

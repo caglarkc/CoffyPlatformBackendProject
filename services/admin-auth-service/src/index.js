@@ -49,7 +49,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
 }));
 
 // Routes
-app.use('/admin-auth', adminAuthRoutes);
+app.use('/api/v1/admin-auth', adminAuthRoutes);
 
 // Error middleware - tüm route'lardan sonra eklenmelidir
 app.use(errorHandler);
@@ -66,27 +66,16 @@ app.get('/', (req, res) => {
 // Initialize database connections
 async function initializeDatabases() {
   try {
-    console.log("Doğrudan host.docker.internal üzerinden bağlanmaya çalışıyorum...");
-
-    // Mongoose bağlantısını doğrudan host.docker.internal adresine yap
-    const mongoose = require('mongoose');
-    const dbName = 'adminAuthServiceDB';
-    const directUrl = `mongodb://host.docker.internal:27017/${dbName}`;
+    // Connect to MongoDB
+    await connectMongoDB();
     
-    await mongoose.connect(directUrl, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000
-    });
-    console.log(`Mongoose doğrudan bağlantı başarılı: ${directUrl}`);
-    
-    // Redis bağlantısını da mevcut fonksiyonu kullanarak yap
+    // Connect to Redis
     await connectRedis();
     
-    logger.info('Veritabanı bağlantıları başarıyla kuruldu');
+    logger.info('All database connections established successfully');
   } catch (error) {
     logger.error('Failed to initialize databases', { error: error.message, stack: error.stack });
-    logger.warn('Service will continue to run with limited functionality');
+    process.exit(1);
   }
 }
 

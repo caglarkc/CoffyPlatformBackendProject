@@ -1,111 +1,82 @@
-/**
- * Swagger Yapılandırması
- * API Gateway'in Swagger dokümantasyonunu oluşturur
- */
-
+const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
-const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
-const express = require('express');
-const { logger } = require('../../shared/utils/logger');
-const services = require('./services');
 
-// Swagger için ara router
-const swaggerSetup = express.Router();
-
-// Mikroservislerin swagger dokümantasyonunu toplama
-let combinedSwaggerSpecs = {
-  openapi: '3.0.0',
-  info: {
-    title: 'Coffy Platform API',
-    version: '1.0.0',
-    description: 'Coffy Platform tüm mikroservis API Dokümantasyonu'
-  },
-  servers: [
-    {
-      url: '/api',
-      description: 'API Gateway'
-    }
-  ],
-  paths: {},
-  components: {
-    schemas: {},
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT'
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'CoffyPlatform API Documentation',
+      version: '1.0.0',
+      description: 'Central API documentation for the CoffyPlatform microservice architecture',
+    },
+    servers: [
+      {
+        url: `http://localhost:8080`,
+        description: 'Gateway API Endpoint'
       }
-    }
-  }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+        cookieAuth: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'accessToken'
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: [],
+      }
+    ],
+    tags: [
+      {
+        name: 'Admin Authentication',
+        description: 'Admin authentication and authorization endpoints'
+      },
+      {
+        name: 'User Authentication',
+        description: 'User registration, authentication, and profile management'
+      },
+      {
+        name: 'Admin Service',
+        description: 'Admin service operations and management'
+      },
+      {
+        name: 'Products',
+        description: 'Product management operations'
+      },
+      {
+        name: 'Stores',
+        description: 'Store management operations'
+      },
+      {
+        name: 'System',
+        description: 'System operations and health checks'
+      }
+    ]
+  },
+  apis: [
+    // Gateway routes
+    path.join(__dirname, '../routes/*.js'),
+    // Individual services
+    // Note: We only include routes that are fully documented with JSDoc annotations
+    path.join(__dirname, '../../services/admin-auth-service/src/routes/admin.auth.routes.js'),
+    path.join(__dirname, '../../services/user-auth-service/src/routes/auth.routes.js'),
+    path.join(__dirname, '../../services/admin-service/src/routes/admin.routes.js')
+    // Add other services as they get documented
+  ],
 };
 
-/**
- * Mikroservislerin Swagger dokümantasyonunu alır ve birleştirir
- */
-async function getSpecs() {
-  try {
-    const serviceEndpoints = [
-      { name: 'admin-auth', url: `http://${services['admin-auth-service']}/admin-auth/api-docs/swagger.json` },
-      { name: 'admin', url: `http://${services['admin-service']}/admin/api-docs/swagger.json` },
-      { name: 'user-auth', url: `http://${services['user-auth-service']}/auth/api-docs/swagger.json` }
-    ];
-    
-    logger.info('Retrieving Swagger specs from microservices...');
-    
-    for (const service of serviceEndpoints) {
-      try {
-        logger.info(`Fetching Swagger spec from ${service.name}...`);
-        const timeout = 3000; // 3 seconds timeout
-        const response = await axios.get(service.url, { timeout });
-        const serviceSpec = response.data;
-        
-        // Endpoints'leri prefix ile birleştir
-        if (serviceSpec.paths) {
-          Object.keys(serviceSpec.paths).forEach(path => {
-            const newPath = path.startsWith('/') 
-              ? `/api/${service.name}${path}` 
-              : `/api/${service.name}/${path}`;
-            
-            combinedSwaggerSpecs.paths[newPath] = serviceSpec.paths[path];
-          });
-        }
-        
-        // Şemaları birleştir
-        if (serviceSpec.components && serviceSpec.components.schemas) {
-          Object.keys(serviceSpec.components.schemas).forEach(schema => {
-            combinedSwaggerSpecs.components.schemas[`${service.name}_${schema}`] = 
-              serviceSpec.components.schemas[schema];
-          });
-        }
-        
-        logger.info(`Successfully integrated ${service.name} Swagger spec`);
-      } catch (error) {
-        logger.warn(`Could not fetch Swagger spec from ${service.name}: ${error.message}`);
-      }
-    }
-    
-    // Statik dokümantasyonu kaydet
-    const swaggerOutputPath = path.join(__dirname, '..', 'swagger-combined.json');
-    fs.writeFileSync(swaggerOutputPath, JSON.stringify(combinedSwaggerSpecs, null, 2));
-    logger.info(`Combined Swagger documentation saved to ${swaggerOutputPath}`);
-    
-    // SwaggerUI için route handler
-    swaggerSetup.get('/swagger.json', (req, res) => {
-      res.json(combinedSwaggerSpecs);
-    });
-    
-    return combinedSwaggerSpecs;
-  } catch (error) {
-    logger.error('Error retrieving Swagger specs', { error });
-    throw error;
-  }
-}
+const specs = swaggerJsdoc(options);
 
 module.exports = {
-  getSpecs,
+  specs,
   swaggerUi,
-  swaggerSetup
 }; 

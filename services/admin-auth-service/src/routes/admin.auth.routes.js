@@ -13,7 +13,7 @@ const asyncHandler = require('../../../../shared/middlewares/errorHandler/asyncH
 
 /**
  * @swagger
- * /admin-auth/login:
+ * /api/v1/admin-auth/login:
  *   post:
  *     summary: Admin login
  *     tags: [Admin Authentication]
@@ -56,7 +56,7 @@ router.post('/login', asyncHandler(AdminAuthController.loginAdmin));
 
 /**
  * @swagger
- * /admin-auth/check-phone:
+ * /api/v1/admin-auth/check-phone:
  *   get:
  *     summary: Check if phone number exists
  *     tags: [Admin Authentication]
@@ -79,7 +79,7 @@ router.get('/check-phone', asyncHandler(AdminAuthController.checkPhone));
 
 /**
  * @swagger
- * /admin-auth/check-email:
+ * /api/v1/admin-auth/check-email:
  *   get:
  *     summary: Check if email exists
  *     tags: [Admin Authentication]
@@ -106,7 +106,7 @@ router.get('/check-cookies', asyncHandler(AdminAuthController.checkCookie));
 
 /**
  * @swagger
- * /admin-auth/me:
+ * /api/v1/admin-auth/me:
  *   get:
  *     summary: Get current admin profile
  *     tags: [Admin Authentication]
@@ -134,7 +134,7 @@ router.get('/test-service', asyncHandler(AdminAuthController.testService));
 
 /**
  * @swagger
- * /admin-auth/health:
+ * /api/v1/admin-auth/health:
  *   get:
  *     summary: Health check endpoint for Admin Auth Service
  *     description: Provides basic health status information for the Admin Auth Service
@@ -153,6 +153,7 @@ router.get('/health', (req, res) => {
 
 // Korumalı rotalar - kimlik doğrulama gerektirir
 router.post('/create-admin', authAdminMiddleware,asyncHandler(AdminAuthController.createAdmin));
+router.post('/create-admin-with-store', authAdminMiddleware,asyncHandler(AdminAuthController.createAdminWithStore));
 router.get('/logout', authAdminMiddleware, asyncHandler(AdminAuthController.logoutAdmin));
 router.post('/change-password', authAdminMiddleware, asyncHandler(AdminAuthController.changePassword));
 

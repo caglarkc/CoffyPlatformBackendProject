@@ -49,7 +49,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
 }));
 
 // Routes
-app.use('/admin', adminRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Error middleware - tüm route'lardan sonra eklenmelidir
 app.use(errorHandler);
@@ -66,29 +66,16 @@ app.get('/', (req, res) => {
 // Initialize database connections
 async function initializeDatabases() {
   try {
-    console.log("Doğrudan host.docker.internal üzerinden bağlanmaya çalışıyorum...");
-
-    // Mongoose bağlantısını doğrudan host.docker.internal adresine yap
-    const mongoose = require('mongoose');
-    const dbName = 'adminServiceDB';
-    const directUrl = `mongodb://host.docker.internal:27017/${dbName}`;
+    // Connect to MongoDB
+    await connectMongoDB();
     
-    await mongoose.connect(directUrl, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000
-    });
-    console.log(`Mongoose doğrudan bağlantı başarılı: ${directUrl}`);
+    // Connect to Redis
+    await connectRedis();
     
-    // Redis bağlantısını da benzer şekilde doğrudan yap
-    const redisResult = await connectRedis();
-    
-    logger.info('Veritabanı bağlantıları başarıyla kuruldu');
-    return true;
+    logger.info('All database connections established successfully');
   } catch (error) {
     logger.error('Failed to initialize databases', { error: error.message, stack: error.stack });
-    logger.warn('Service will continue to run with limited functionality');
-    return false;
+    process.exit(1);
   }
 }
 
@@ -118,67 +105,14 @@ function initializeKeyRotation() {
 // Initialize event bus and listeners
 async function initializeEventBus() {
   try {
-    // RABBITMQ_URL değişkenini ayarla (eğer mevcut değilse)
-    if (!process.env.RABBITMQ_URL) {
-      // Önce yerel .env dosyasındaki RABBITMQ_URL_LOCAL değişkenini dene
-      if (process.env.RABBITMQ_URL_LOCAL) {
-        process.env.RABBITMQ_URL = process.env.RABBITMQ_URL_LOCAL;
-        logger.info(`Yerel RabbitMQ bağlantısı kullanılıyor: ${process.env.RABBITMQ_URL}`);
-      } else {
-        // Yerel erişim için host.docker.internal kullan
-        process.env.RABBITMQ_URL = 'amqp://admin:Erebus13032003_@host.docker.internal:5672';
-        logger.info(`Varsayılan RabbitMQ bağlantısı ayarlandı: ${process.env.RABBITMQ_URL}`);
-      }
-    } else {
-      logger.info(`RabbitMQ bağlantısı için yapılandırılmış URL: ${process.env.RABBITMQ_URL}`);
-    }
+    await eventBus.connect();
+    logger.info('EventBus connection established successfully');
     
-    // Docker içinde host.docker.internal çalışmazsa IP adresiyle dene
-    try {
-      await eventBus.connect();
-      logger.info('EventBus connection established successfully');
-      
-      // Initialize event listeners for admin service
-      await adminService.initializeEventListeners();
-      logger.info('Admin service event publishers initialized successfully');
-    } catch (firstError) {
-      logger.warn(`İlk RabbitMQ bağlantı denemesi başarısız oldu: ${firstError.message}`);
-      logger.info('Docker ağı üzerinden bağlantı deneniyor...');
-      
-      // Servis adıyla tekrar dene
-      try {
-        process.env.RABBITMQ_URL = 'amqp://admin:Erebus13032003_@rabbitmq:5672';
-        await eventBus.connect();
-        logger.info('EventBus servis adı üzerinden bağlantı başarılı');
-        
-        await adminService.initializeEventListeners();
-        logger.info('Admin service event publishers initialized successfully');
-      } catch (secondError) {
-        // Loopback adresi ile dene
-        logger.warn(`İkinci RabbitMQ bağlantı denemesi başarısız oldu: ${secondError.message}`);
-        logger.info('Loopback bağlantısı deneniyor...');
-        
-        try {
-          process.env.RABBITMQ_URL = 'amqp://admin:Erebus13032003_@localhost:5672';
-          await eventBus.connect();
-          logger.info('EventBus loopback bağlantısı başarılı');
-          
-          await adminService.initializeEventListeners();
-          logger.info('Admin service event publishers initialized successfully');
-        } catch (thirdError) {
-          logger.error('Tüm RabbitMQ bağlantı denemeleri başarısız oldu', { 
-            error: thirdError.message, 
-            stack: thirdError.stack 
-          });
-          
-          // RabbitMQ olmadan devam et
-          logger.warn('Servis RabbitMQ olmadan sınırlı işlevsellikle devam edecek');
-        }
-      }
-    }
+    // Initialize event listeners for admin service
+    await adminService.initializeEventListeners();
+    logger.info('Admin service event publishers initialized successfully');
   } catch (error) {
     logger.error('Failed to initialize EventBus', { error: error.message, stack: error.stack });
-    logger.warn('Servis RabbitMQ olmadan sınırlı işlevsellikle devam edecek');
   }
 }
 

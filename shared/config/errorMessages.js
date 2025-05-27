@@ -45,6 +45,7 @@ module.exports = {
         ALREADY_UNBLOCKED: 'Admin zaten bloklanmamış',
         PASSWORD_SAME: 'Şifre aynı olamaz',
         USER_NOT_LOGGED_IN: 'Kullanıcı giriş yapmamış',
+        INVALID_ADD_WORKER_DATA: 'Çalışanın emaili veya telefon numarası girilmelidir',
     },
     NOT_FOUND: {
         ADMIN_NOT_FOUND: 'Admin bulunamadı',
@@ -80,6 +81,9 @@ module.exports = {
         ROLE_IS_SAME_OR_BETTER: 'Rol aynı veya daha yüksek bir rol mevcut',
         ROLE_IS_SAME_OR_LOWER: 'Rol aynı veya daha düşük bir rol mevcut',
         CREATOR_ALREADY_EXISTS: 'Creator zaten mevcut',
+        DONT_ENTER_EMAIL_AND_PHONE: 'Email ve telefon numarasını aynı anda girmeyiniz',
+        WORKER_ALREADY_EXISTS: 'Bu çalışan zaten mevcut',
+        WORKERS_HAS_STORE: 'Bu çalışanın mağazası mevcut',
     },
     TOKEN: {
         TOKEN_EXPIRED: 'Token süresi doldu',

@@ -11,10 +11,9 @@ const asyncHandler = require('../../../../shared/middlewares/errorHandler/asyncH
  *   description: Admin Service endpoints
  */
 
-
 /**
  * @swagger
- * /admin/me:
+ * /api/v1/admin/me:
  *   get:
  *     summary: Get current admin profile
  *     tags: [Admin Service]
@@ -33,7 +32,7 @@ router.get('/me', extractAdminIdMiddleware, asyncHandler(AdminController.getMe))
 
 /**
  * @swagger
- * /admin/change-data-many:
+ * /api/v1/admin/change-data-many:
  *   post:
  *     summary: Update admin data many
  *     tags: [Admin Service]
@@ -73,12 +72,12 @@ router.get('/me', extractAdminIdMiddleware, asyncHandler(AdminController.getMe))
  *       500:
  *         description: Server error
  */
-// PUT /api/admin/change-data-many - Update admin data many
+// PUT /api/v1/admin/change-data-many - Update admin data many
 router.post('/change-data-many', extractAdminIdMiddleware, asyncHandler(AdminController.changeAdminDataMany));
 
 /**
  * @swagger
- * /admin/change-data-just-one:
+ * /api/v1/admin/change-data-just-one:
  *   post:
  *     summary: Update a single field of admin data
  *     tags: [Admin Service]
@@ -128,7 +127,7 @@ router.post('/change-data-just-one', extractAdminIdMiddleware, asyncHandler(Admi
 
 /**
  * @swagger
- * /admin/change-location:
+ * /api/v1/admin/change-location:
  *   post:
  *     summary: Update admin location
  *     tags: [Admin Service]
@@ -171,7 +170,7 @@ router.post('/change-location', extractAdminIdMiddleware, asyncHandler(AdminCont
 
 /**
  * @swagger
- * /admin/delete-me:
+ * /api/v1/admin/delete-me:
  *   get:
  *     summary: Delete current admin account
  *     tags: [Admin Service]
@@ -187,7 +186,7 @@ router.get('/delete-me', extractAdminIdMiddleware, asyncHandler(AdminController.
 
 /**
  * @swagger
- * /admin/downgrade-role:
+ * /api/v1/admin/downgrade-role:
  *   post:
  *     summary: Downgrade admin role
  *     tags: [Admin Service]
@@ -220,7 +219,7 @@ router.post('/downgrade-role', extractAdminIdMiddleware, asyncHandler(AdminContr
 
 /**
  * @swagger
- * /admin/upgrade-role:
+ * /api/v1/admin/upgrade-role:
  *   post:
  *     summary: Upgrade admin role
  *     tags: [Admin Service]
@@ -253,7 +252,7 @@ router.post('/upgrade-role', extractAdminIdMiddleware, asyncHandler(AdminControl
 
 /**
  * @swagger
- * /admin/block-admin:
+ * /api/v1/admin/block-admin:
  *   post:
  *     summary: Block an admin
  *     tags: [Admin Service]
@@ -286,7 +285,7 @@ router.post('/block-admin', extractAdminIdMiddleware, asyncHandler(AdminControll
 
 /**
  * @swagger
- * /admin/unblock-admin:
+ * /api/v1/admin/unblock-admin:
  *   post:
  *     summary: Unblock an admin
  *     tags: [Admin Service]
@@ -319,7 +318,7 @@ router.post('/unblock-admin', extractAdminIdMiddleware, asyncHandler(AdminContro
 
 /**
  * @swagger
- * /admin/get-admin-with-id:
+ * /api/v1/admin/get-admin-with-id:
  *   post:
  *     summary: Get admin by ID
  *     tags: [Admin Service]
@@ -352,7 +351,7 @@ router.post('/get-admin-with-id', extractAdminIdMiddleware, asyncHandler(AdminCo
 
 /**
  * @swagger
- * /admin/get-admin-with-email:
+ * /api/v1/admin/get-admin-with-email:
  *   post:
  *     summary: Get admin by email
  *     tags: [Admin Service]
@@ -386,7 +385,7 @@ router.post('/get-admin-with-email', extractAdminIdMiddleware, asyncHandler(Admi
 
 /**
  * @swagger
- * /admin/get-admin-with-phone:
+ * /api/v1/admin/get-admin-with-phone:
  *   post:
  *     summary: Get admin by phone
  *     tags: [Admin Service]
@@ -419,7 +418,7 @@ router.post('/get-admin-with-phone', extractAdminIdMiddleware, asyncHandler(Admi
 
 /**
  * @swagger
- * /admin/get-admins:
+ * /api/v1/admin/get-admins:
  *   get:
  *     summary: Get all admins
  *     tags: [Admin Service]
@@ -437,7 +436,7 @@ router.get('/get-admins', extractAdminIdMiddleware, asyncHandler(AdminController
 
 /**
  * @swagger
- * /admin/get-admins-with-unique-data:
+ * /api/v1/admin/get-admins-with-unique-data:
  *   post:
  *     summary: Get admins with unique data
  *     tags: [Admin Service]
@@ -468,7 +467,7 @@ router.post('/get-admins-with-unique-data', extractAdminIdMiddleware, asyncHandl
 
 /**
  * @swagger
- * /admin/get-users:
+ * /api/v1/admin/get-users:
  *   get:
  *     summary: Get all users
  *     tags: [Admin Service]
@@ -486,7 +485,7 @@ router.get('/get-users', extractAdminIdMiddleware, asyncHandler(AdminController.
 
 /**
  * @swagger
- * /admin/clear-cookies:
+ * /api/v1/admin/clear-cookies:
  *   post:
  *     summary: Clear all cookies
  *     tags: [Admin Service]
@@ -500,7 +499,7 @@ router.post('/clear-cookies', asyncHandler(AdminController.clearAllCookies));
 
 /**
  * @swagger
- * /admin/test-auth-communication:
+ * /api/v1/admin/test-auth-communication:
  *   post:
  *     summary: Test communication with auth service
  *     tags: [Admin Service]
@@ -520,7 +519,7 @@ router.post('/test-auth-communication', asyncHandler(AdminController.testAuthCom
 
 /**
  * @swagger
- * /admin/test-service:
+ * /api/v1/admin/test-service:
  *   get:
  *     summary: Test admin service operation
  *     tags: [Admin Service]

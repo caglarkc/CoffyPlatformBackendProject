@@ -12,7 +12,7 @@ const { getRedisClient } = require('../utils/database');
 const { getRequestContext } = require('../middlewares/requestContext');
 const { logger } = require('../../../../shared/utils/logger');
 const {validatePhone , validateEmail, validateName, validateSurname, validatePassword} = require('../../../../shared/utils/textUtils');
-const {validateAdminRegister} = require('../../../../shared/utils/validationUtils');
+const {validateAdminRegister, validateAdminRegisterWithStore} = require('../../../../shared/utils/validationUtils');
 const eventPublisher = require('../../../../shared/services/event/eventPublisher');
 const eventSubscriber = require('../../../../shared/services/event/eventSubscriber');
 const dotenv = require('dotenv');
@@ -27,6 +27,7 @@ const _formatAdminResponse = (admin) => {
         surname: admin.surname,
         role: admin.role,
         location: admin.location,
+        storeId: admin.storeId,
         whoCreate: admin.whoCreate
     };
 };
@@ -104,6 +105,90 @@ class AdminAuthService {
     }
 
 
+    /**
+     * Hata durumlarını yönetmek için yardımcı metod
+     * @param {Error} error - Yakalanan hata
+     * @param {String} errorMessage - Kullanıcıya gösterilecek hata mesajı
+     */
+    _handleError(error, errorMessage) {
+        
+        // Hatayı logla
+        logger.error(errorMessage, { 
+            error: error.message, 
+            stack: error.stack
+        });
+
+        // Hata mesajında anahtar kelimeler var mı diye kontrol et
+        const errorMsg = error.message && error.message.toLowerCase();
+        
+        if (errorMsg && errorMsg.includes('bulunamadı')) {
+            throw new NotFoundError(errorMessage);
+        } else if (errorMsg && (errorMsg.includes('zaten var') || errorMsg.includes('already exists'))) {
+            throw new ConflictError(errorMessage);
+        } else if (errorMsg && (errorMsg.includes('geçersiz') || errorMsg.includes('invalid'))) {
+            throw new ValidationError(errorMessage);
+        } else if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof ConflictError) {
+            // Zaten tiplendirilmiş hata ise aynen fırlat
+            throw error;
+        } else {
+            // Tiplendirilmemiş hatalar için, mesaja göre hata tipi oluştur
+            if (errorMessage.toLowerCase().includes('bulunamadı')) {
+                throw new NotFoundError(errorMessage);
+            } else {
+                throw new Error(errorMessage);
+            }
+        }
+    }
+
+    _handleErrorWithType(response, adminId, errorMessage) {
+
+        logger.error(errorMessage, { 
+            adminId,
+            error: response.message 
+        });
+
+        // Hata nesnesine ek veri ekliyoruz
+        const errorData = {
+            id: response.id || adminId,
+            receivedData: response.receivedData,
+            timestamp: response.timestamp || new Date().toISOString()
+        };
+
+        if (response.error === 'ValidationError') {
+            const error = new ValidationError(errorMessage);
+            error.data = errorData;
+            throw error;
+        } else if (response.error === 'NotFoundError') {
+            const error = new NotFoundError(errorMessage);
+            error.data = errorData;
+            throw error;
+        } else if (response.error === 'ConflictError') {
+            const error = new ConflictError(errorMessage);
+            error.data = errorData;
+            throw error;
+        } else {
+            const error = new Error(errorMessage);
+            error.data = errorData;
+            throw error;
+        }        
+        
+    }
+
+    _handleSuccess(logMessage,successMessage, data) {
+
+        logger.info(logMessage, { 
+            data,
+            success: true
+        });
+
+        return {
+            success: true,
+            message: successMessage,
+            data: data
+        };
+    }
+
+
 
     async checkPhone(data) {
         try {
@@ -148,7 +233,7 @@ class AdminAuthService {
                 newAdminEmail: data.email
             });
             
-            const {name, surname, email, phone, password, role, city, region, district, storeId} = data;
+            const {name, surname, email, phone, password, city, region, district} = data;
             const existingEmail = await Admin.findOne({email: email});
             const existingPhone = await Admin.findOne({phone: phone});
     
@@ -171,13 +256,92 @@ class AdminAuthService {
                 email: email,
                 phone: phone,
                 password: helpers.hashAdminData(password),
-                role: role,
                 location: {
                     city,
                     region,
                     district,
-                    storeId
                 },
+                whoCreate: loggedAdmin._id
+            });
+            await newAdmin.save();
+            
+            logger.info('Admin registered successfully', { 
+                adminId: newAdmin._id,
+                createdBy: loggedAdmin._id
+            });
+            
+            const message = "Admin başarıyla oluşturuldu";
+            return {message: message, 
+                    admin: _formatAdminResponse(newAdmin)};
+            
+        } catch (error) {
+            logger.error('Admin registration error', { 
+                error: error.message, 
+                stack: error.stack,
+                creatorId: loggedAdmin?._id 
+            });
+            throw error;
+        }
+
+    }
+
+    async createAdminWithStore(data, loggedAdmin) {
+        try {
+            logger.info('Admin registration attempt', { 
+                creatorId: loggedAdmin._id,
+                creatorRole: loggedAdmin.role,
+                newAdminEmail: data.email
+            });
+            
+            const {name, surname, email, phone, password, role, city, region, district, storeId} = data;
+            const existingEmail = await Admin.findOne({email: email});
+            const existingPhone = await Admin.findOne({phone: phone});
+    
+            if (existingEmail) {
+                logger.warn('Admin registration failed - email exists', { email });
+                throw new ConflictError(errorMessages.CONFLICT.EMAIL_ALREADY_EXISTS);
+            }
+    
+            if (existingPhone) {
+                logger.warn('Admin registration failed - phone exists', { phone });
+                throw new ConflictError(errorMessages.CONFLICT.PHONE_ALREADY_EXISTS);
+            }
+
+
+            validateAdminRegisterWithStore(data, loggedAdmin.role);
+
+            logger.info('Get store from store service', { 
+                storeId: storeId,
+            });
+
+            // Store servisine istek gönder
+            const requestData = {
+                storeId: storeId,
+                timestamp: new Date().toISOString()
+            };
+
+            // Store servisine istek gönder
+            const response = await eventPublisher.request('store.getStore', requestData, {
+                timeout: 10000
+            });
+            
+            if (!response.success) {
+                this._handleErrorWithType(response, storeId, "Store bulunamadı");
+            }
+
+            const newAdmin = new Admin({
+                name,
+                surname,
+                email: email,
+                phone: phone,
+                password: helpers.hashAdminData(password),
+                role: role,
+                location: {
+                    city,
+                    region,
+                    district
+                },
+                storeId: storeId,
                 whoCreate: loggedAdmin._id
             });
             await newAdmin.save();
@@ -200,7 +364,6 @@ class AdminAuthService {
             });
             throw error;
         }
-
     }
 
     async loginAdmin(data) {
@@ -1148,9 +1311,103 @@ class AdminAuthService {
               
             });
 
+
+            await eventSubscriber.respondTo('admin.auth.getAdminWithEmail', async (payload, metadata) => {
+                logger.info('Received getAdminWithEmail request', { 
+                    payload,
+                    metadata,
+                    replyTo: payload.replyTo 
+                });
+
+                try {
+                    const admin = await Admin.findOne({email: payload.email});
+                    if (!admin) {
+                        throw new NotFoundError(errorMessages.NOT_FOUND.ADMIN_NOT_FOUND);
+                    }
+
+                    if (admin.storeId !== null) {
+                        throw new ConflictError(errorMessages.CONFLICT.WORKERS_HAS_STORE);
+                    }
+
+
+                    return {
+                        success: true,
+                        message: `Admin bulundu`,
+                        admin: _formatAdminResponse(admin),
+                        receivedData: payload,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                } catch (error) {
+                    logger.error(`Error getting admin with email ${payload.email}`, {
+                        error: error.message,
+                        stack: error.stack,
+                        email: payload.email
+                    });
+                    
+                    return {
+                        success: false,
+                        message: error.message,
+                        error: error.name,
+                        code: error.statusCode || 400,
+                        receivedData: payload,
+                        timestamp: new Date().toISOString()
+                    };
+                }
+            });
+
+            await eventSubscriber.respondTo('admin.auth.addStoreToWorker', async (payload, metadata) => {
+                logger.info('Received addStoreToWorker request', { 
+                    payload,
+                    metadata,
+                    replyTo: payload.replyTo 
+                });
+
+                try {
+                    const admin = await Admin.findById(payload.adminId);
+                    if (!admin) {
+                        throw new NotFoundError(errorMessages.NOT_FOUND.ADMIN_NOT_FOUND);
+                    }
+
+                    if (admin.storeId !== null) {
+                        throw new ConflictError(errorMessages.CONFLICT.WORKERS_HAS_STORE);
+                    }
+
+                    admin.storeId = payload.storeId;
+                    admin.role = payload.role;
+                    await admin.save();
+
+                    return {
+                        success: true,
+                        message: `Admin başarıyla güncellendi`,
+                        admin: _formatAdminResponse(admin),
+                        receivedData: payload,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                } catch (error) {
+                    logger.error(`Error adding store to worker`, {
+                        error: error.message,
+                        stack: error.stack,
+                        adminId: payload.adminId
+                    });
+                    
+                    return {
+                        success: false,
+                        message: error.message,
+                        error: error.name,
+                        code: error.statusCode || 400,
+                        receivedData: payload,
+                        timestamp: new Date().toISOString()
+                    };
+                }
+            });
+
+
+
             logger.info('Admin-Auth service event listeners initialized');
         } catch (error) {
-            logger.error('Failed to initialize event listeners', { error: error.message, stack: error.stack });
+            logger.error('Failed to initialize admin-auth service event listeners', { error: error.message, stack: error.stack });
             throw error;
         }
     }

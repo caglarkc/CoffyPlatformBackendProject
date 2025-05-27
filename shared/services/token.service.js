@@ -9,14 +9,12 @@ const errorMessages = require('../config/errorMessages');
 class TokenService {
     async verifyAndDecodeToken(token, isRefreshToken = false) {
         try {
-            
-
             // Token'ı doğrula
             const decoded = verifyToken(token, isRefreshToken);
 
             // Otomatik yenileme kontrolü
             if (!isRefreshToken && shouldRefreshToken(token)) {
-                const newAccessToken = createAccessToken(decoded.userId);
+                const newAccessToken = createAccessToken(decoded.userId, decoded.role);
                 return {
                     decoded,
                     newAccessToken
@@ -32,10 +30,9 @@ class TokenService {
         }
     }
 
-
-    createTokenPair(userId) {
+    createTokenPair(userId, role) {
         return {
-            accessToken: createAccessToken(userId),
+            accessToken: createAccessToken(userId, role),
             refreshToken: createRefreshToken(userId)
         };
     }

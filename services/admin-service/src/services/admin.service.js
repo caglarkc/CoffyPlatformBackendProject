@@ -559,54 +559,7 @@ class AdminService {
      * Initialize event bus listeners for the admin service
      */
     async initializeEventListeners() {
-        try {
-            logger.info('Initializing event listeners for admin service');
-            
-            // Admin bilgilerini isteyen olursa cevap ver
-            await eventSubscriber.subscribe('admin.getAdminInfo', async (data) => {
-                try {
-                    const { adminId } = data;
-                    logger.info('Received request for admin info', { adminId });
-                    
-                    // Admin bilgilerini al
-                    const admin = await Admin.findById(adminId);
-                    if (!admin) {
-                        return { 
-                            success: false, 
-                            error: 'NotFoundError',
-                            message: 'Admin bulunamadı', 
-                            timestamp: new Date().toISOString() 
-                        };
-                    }
-                    
-                    return {
-                        success: true,
-                        admin: _formatAdminResponse(admin),
-                        timestamp: new Date().toISOString()
-                    };
-                } catch (error) {
-                    logger.error('Error processing admin.getAdminInfo event', { 
-                        error: error.message, 
-                        stack: error.stack 
-                    });
-                    
-                    return {
-                        success: false,
-                        error: error.name || 'Error',
-                        message: error.message || 'Admin bilgileri alınamadı',
-                        timestamp: new Date().toISOString()
-                    };
-                }
-            });
-            
-            logger.info('Admin service event listeners initialized successfully');
-        } catch (error) {
-            logger.error('Failed to initialize event listeners', { 
-                error: error.message, 
-                stack: error.stack 
-            });
-            throw error;
-        }
+        
     }
 }
 

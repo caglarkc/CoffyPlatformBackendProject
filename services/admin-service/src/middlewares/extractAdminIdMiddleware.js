@@ -121,7 +121,13 @@ const extractAdminIdMiddleware = async (req, res, next) => {
                     try {
                         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
                         adminId = decoded.userId;
-                        logger.debug('Admin ID extracted from token', { adminId, authSource });
+                        // Admin rolünü de token'dan çıkar
+                        if (decoded.role !== undefined) {
+                            req.adminRole = decoded.role;
+                            logger.debug('Admin ID and role extracted from token', { adminId, role: decoded.role, authSource });
+                        } else {
+                            logger.debug('Admin ID extracted from token, but no role found', { adminId, authSource });
+                        }
                     } catch (tokenError) {
                         // Token hatasının tipi
                         const tokenErrorType = tokenError.name;

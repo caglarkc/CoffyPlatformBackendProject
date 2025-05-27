@@ -21,7 +21,7 @@ const getMongoConnectionInfo = (uri) => {
   
   // Eğer uri geçerli değilse varsayılan değerleri döndür
   return {
-    url: 'mongodb://host.docker.internal:27017',
+    url: 'mongodb://localhost:27017',
     dbName: 'storeServiceDB',
     options: {
       serverSelectionTimeoutMS: 5000,
@@ -31,10 +31,10 @@ const getMongoConnectionInfo = (uri) => {
 };
 
 // Auth veritabanı URI'sı (admins, users ve logs koleksiyonları burada)
-const authUri = process.env.AUTH_MONGODB_URI || 'mongodb://host.docker.internal:27017/authServiceDB';
+const authUri = process.env.AUTH_MONGODB_URI || 'mongodb://localhost:27017/authServiceDB';
 
 // Store veritabanı URI'sı (mağaza bilgileri burada)
-const storeUri = process.env.STORE_MONGODB_URI || 'mongodb://host.docker.internal:27017/storeServiceDB';
+const storeUri = process.env.STORE_MONGODB_URI || 'mongodb://localhost:27017/storeServiceDB';
 
 module.exports = {
   // Store servisinin ana veritabanı - varsayılan olarak kullanılır

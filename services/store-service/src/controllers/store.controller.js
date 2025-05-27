@@ -5,8 +5,7 @@ class StoreController {
 
     async createStore(req, res, next) {
         try {
-            const loggedAdmin = req.admin;
-            const result = await StoreService.createStore(req.body, loggedAdmin);
+            const result = await StoreService.createStore(req.body);
             return res.status(201).json(result);
         } catch (error) {
             next(error);
@@ -15,8 +14,7 @@ class StoreController {
 
     async changeStoreStatus(req, res, next) {
         try {
-            const loggedAdmin = req.admin;
-            const result = await StoreService.changeStoreStatus(req.body, loggedAdmin);
+            const result = await StoreService.changeStoreStatus(req.body);
             return res.status(200).json(result);
         } catch (error) {
             next(error);
@@ -35,8 +33,7 @@ class StoreController {
     
     async addWorker(req, res, next) {
         try {
-            const loggedAdmin = req.admin;
-            const result = await StoreService.addWorker(req.body, loggedAdmin);
+            const result = await StoreService.addWorker(req.body);
             return res.status(200).json(result);
         } catch (error) {
             next(error);
@@ -45,8 +42,7 @@ class StoreController {
 
     async changeWorkerRole(req, res, next) {
         try {
-            const loggedAdmin = req.admin;
-            const result = await StoreService.changeWorkerRole(req.body, loggedAdmin);
+            const result = await StoreService.changeWorkerRole(req.body);
             return res.status(200).json(result);
         } catch (error) {
             next(error);
@@ -55,8 +51,7 @@ class StoreController {
 
     async deleteWorker(req, res, next) {
         try {
-            const loggedAdmin = req.admin;
-            const result = await StoreService.deleteWorker(req.body, loggedAdmin);
+            const result = await StoreService.deleteWorker(req.body);
             return res.status(200).json(result);
         } catch (error) {
             next(error);
@@ -65,22 +60,9 @@ class StoreController {
 
     async getLogin(req, res, next) {
         try {
-            const loggedAdmin = req.admin;
-            if (loggedAdmin) {
-                return res.status(200).json({
-                    success: true,
-                    status: 200,
-                    message: "Login successful",
-                    admin: loggedAdmin
-                });
-            }       
-            else {
-                return res.status(401).json({
-                    success: false,
-                    status: 401,
-                    message: "Login failed"
-                });
-            }
+            const loggedAdminId = req.adminId;
+            const admin = await StoreService.getLogin(loggedAdminId);
+            return res.status(200).json(admin);
         } catch (error) {
             next(error);
         }
@@ -98,8 +80,7 @@ class StoreController {
 
     async searchStore(req, res, next) {
         try {
-            const loggedAdmin = req.admin;
-            const result = await StoreService.searchStore(req.body, loggedAdmin);
+            const result = await StoreService.searchStore(req.body);
             return res.status(200).json(result);
         } catch (error) {
             next(error);

@@ -32,8 +32,45 @@ const validateAdminRegister = (data, loggedAdminRole) => {
     try {
         if (loggedAdminRole <= data.role) {
             logger.warn('Admin registration failed - insufficient permissions', { 
-                creatorRole: loggedAdminRole, 
-                attemptedRole: data.role 
+                creatorRole: loggedAdminRole
+            });
+            throw new ForbiddenError(errorMessages.FORBIDDEN.INSUFFICIENT_PERMISSIONS);
+        }
+        
+        textUtils.validateName(data.name);
+        textUtils.validateSurname(data.surname);
+        textUtils.validateEmail(data.email);
+        textUtils.validatePhone(data.phone);
+        textUtils.validatePassword(data.password);
+        if (data.location) {
+            textUtils.validateLocation(data.location.city);
+            textUtils.validateLocation(data.location.region);
+            textUtils.validateLocation(data.location.district);
+        }
+        
+        return true; // Tüm doğrulamalar başarılı
+    } catch (error) {
+        // Hata oluştuğunda loglama yap
+        logger.warn(`Admin registration validation failed: ${error.message}`, {
+            errorType: error.constructor.name,
+            errorMessage: error.message,
+            validationField: getFailedValidationField(error),
+            adminData: {
+                email: data.email,
+                creatorRole: loggedAdminRole
+            }
+        });
+        
+        // Hatayı tekrar fırlat
+        throw error;
+    }
+}
+
+const validateAdminRegisterWithStore = (data, loggedAdminRole) => {
+    try {
+        if (loggedAdminRole <= data.role) {
+            logger.warn('Admin registration failed - insufficient permissions', { 
+                creatorRole: loggedAdminRole
             });
             throw new ForbiddenError(errorMessages.FORBIDDEN.INSUFFICIENT_PERMISSIONS);
         }
@@ -44,11 +81,11 @@ const validateAdminRegister = (data, loggedAdminRole) => {
         textUtils.validatePhone(data.phone);
         textUtils.validatePassword(data.password);
         textUtils.validateRole(data.role);
+        textUtils.validateStoreId(data.storeId);
         if (data.location) {
             textUtils.validateLocation(data.location.city);
             textUtils.validateLocation(data.location.region);
             textUtils.validateLocation(data.location.district);
-            textUtils.validateStoreId(data.location.storeId);
         }
         
         return true; // Tüm doğrulamalar başarılı
@@ -91,5 +128,6 @@ module.exports = {
     validateCreateStore,
     validateAdminWithPermission,
     validateAdmin,
-    validateAdminRegister
+    validateAdminRegister,
+    validateAdminRegisterWithStore
 }

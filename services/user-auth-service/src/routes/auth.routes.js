@@ -12,7 +12,7 @@ const asyncHandler = require('../../../../shared/middlewares/errorHandler/asyncH
 
 /**
  * @swagger
- * /auth/register:
+ * /api/v1/user-auth/register:
  *   post:
  *     summary: Register a new user
  *     tags: [User Authentication]
@@ -61,7 +61,7 @@ router.post('/register', asyncHandler(authController.register.bind(authControlle
 
 /**
  * @swagger
- * /auth/send-verification-email:
+ * /api/v1/user-auth/send-verification-email:
  *   post:
  *     summary: Send verification email to user
  *     tags: [User Authentication]
@@ -89,7 +89,7 @@ router.post('/send-verification-email', asyncHandler(authController.sendVerifica
 
 /**
  * @swagger
- * /auth/verify-email:
+ * /api/v1/user-auth/verify-email:
  *   post:
  *     summary: Verify user's email with verification code
  *     tags: [User Authentication]
@@ -122,7 +122,7 @@ router.post('/verify-email', asyncHandler(authController.verifyEmail.bind(authCo
 
 /**
  * @swagger
- * /auth/login-with-email-send-code:
+ * /api/v1/user-auth/login-with-email-send-code:
  *   post:
  *     summary: Send login verification code to user's email
  *     tags: [User Authentication]
@@ -149,7 +149,7 @@ router.post('/login-with-email-send-code', asyncHandler(authController.loginWith
 
 /**
  * @swagger
- * /auth/login-with-email-verify-code:
+ * /api/v1/user-auth/login-with-email-verify-code:
  *   post:
  *     summary: Verify login code sent to email
  *     tags: [User Authentication]
@@ -191,7 +191,7 @@ router.post('/login-with-email-verify-code', asyncHandler(authController.loginWi
 
 /**
  * @swagger
- * /auth/login-with-email-password:
+ * /api/v1/user-auth/login-with-email-password:
  *   post:
  *     summary: Login with email and password
  *     tags: [User Authentication]
@@ -223,7 +223,7 @@ router.post('/login-with-email-password', asyncHandler(authController.loginWithE
 
 /**
  * @swagger
- * /auth/login-with-phone-password:
+ * /api/v1/user-auth/login-with-phone-password:
  *   post:
  *     summary: Login with phone and password
  *     tags: [User Authentication]
@@ -254,7 +254,7 @@ router.post('/login-with-phone-password', asyncHandler(authController.loginWithP
 
 /**
  * @swagger
- * /auth/logout:
+ * /api/v1/user-auth/logout:
  *   get:
  *     summary: Logout current user
  *     tags: [User Authentication]
@@ -275,7 +275,7 @@ router.get('/logout', asyncHandler(authController.logout.bind(authController)));
 
 /**
  * @swagger
- * /auth/check-phone:
+ * /api/v1/user-auth/check-phone:
  *   get:
  *     summary: Check if phone number exists
  *     tags: [User Authentication]
@@ -294,7 +294,7 @@ router.get('/check-phone', asyncHandler(authController.checkPhone.bind(authContr
 
 /**
  * @swagger
- * /auth/check-email:
+ * /api/v1/user-auth/check-email:
  *   get:
  *     summary: Check if email exists
  *     tags: [User Authentication]
@@ -313,7 +313,7 @@ router.get('/check-email', asyncHandler(authController.checkEmail.bind(authContr
 
 /**
  * @swagger
- * /auth/get-user:
+ * /api/v1/user-auth/get-user:
  *   get:
  *     summary: Get current user profile
  *     tags: [User Authentication]
@@ -368,7 +368,7 @@ router.get('/get-user', asyncHandler(authController.getUser.bind(authController)
 
 /**
  * @swagger
- * /auth/update-user:
+ * /api/v1/user-auth/update-user:
  *   get:
  *     summary: Update user profile
  *     tags: [User Authentication]
@@ -437,7 +437,7 @@ router.get('/update-user', asyncHandler(authController.updateUser.bind(authContr
 
 /**
  * @swagger
- * /auth/update-user-unique-request:
+ * /api/v1/user-auth/update-user-unique-request:
  *   get:
  *     summary: Request update for unique field (email or phone)
  *     tags: [User Authentication]
@@ -475,7 +475,7 @@ router.get('/update-user-unique-request', asyncHandler(authController.updateUser
 
 /**
  * @swagger
- * /auth/verify-update-request:
+ * /api/v1/user-auth/verify-update-request:
  *   get:
  *     summary: Verify update request for unique field
  *     tags: [User Authentication]
@@ -513,7 +513,7 @@ router.get('/verify-update-request', asyncHandler(authController.verifyUpdateReq
 
 /**
  * @swagger
- * /auth/cancel-update-request:
+ * /api/v1/user-auth/cancel-update-request:
  *   get:
  *     summary: Cancel an update request
  *     tags: [User Authentication]
@@ -558,7 +558,7 @@ router.post('/admin/rotate-secret-key', async (req, res, next) => {
 
 /**
  * @swagger
- * /auth/health:
+ * /api/v1/user-auth/health:
  *   get:
  *     summary: Health check endpoint for User Auth Service
  *     description: Provides basic health status information for the User Auth Service

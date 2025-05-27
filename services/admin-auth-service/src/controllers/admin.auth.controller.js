@@ -21,6 +21,16 @@ class AdminAuthController {
         }
     }
 
+    async createAdminWithStore(req, res) {
+        try {
+            const loggedAdmin = req.admin;
+            const admin = await AdminAuthService.createAdminWithStore(req.body, loggedAdmin);
+            return res.status(201).json(admin);
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
     
 
     async checkPhone(req, res) {

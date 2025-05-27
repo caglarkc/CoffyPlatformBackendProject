@@ -25,13 +25,16 @@ const adminSchema = new mongoose.Schema({
     },
     role: {
         type: Number,
-        required: true
+        default: null
     },
     location: {
         region: { type: String, default: null },
         city: { type: String, default: null },
         district: { type: String, default: null },
-        storeId: { type: String, default: null },
+    },
+    storeId: {
+        type: String,
+        default: null
     },
     whoCreate: {
         type: mongoose.Schema.Types.ObjectId,
